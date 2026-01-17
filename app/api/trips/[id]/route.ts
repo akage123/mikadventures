@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createTripsTable, deleteTrip, updateTrip } from '../../../../lib/db';
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     if (!process.env.POSTGRES_URL && !process.env.POSTGRES_URL_NON_POOLING) {
       return NextResponse.json({ error: 'POSTGRES_URL not set' }, { status: 503 });
     }
     await createTripsTable();
-    const id = Number(params.id);
+    const { id: rawId } = await params;
+    const id = Number(rawId);
     if (Number.isNaN(id)) {
       return NextResponse.json({ error: 'Invalid trip id' }, { status: 400 });
     }
@@ -21,13 +22,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     if (!process.env.POSTGRES_URL && !process.env.POSTGRES_URL_NON_POOLING) {
       return NextResponse.json({ error: 'POSTGRES_URL not set' }, { status: 503 });
     }
     await createTripsTable();
-    const id = Number(params.id);
+    const { id: rawId } = await params;
+    const id = Number(rawId);
     if (Number.isNaN(id)) {
       return NextResponse.json({ error: 'Invalid trip id' }, { status: 400 });
     }
