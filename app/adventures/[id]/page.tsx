@@ -31,7 +31,11 @@ export default async function AdventureDetailPage({ params }: { params: Promise<
     notFound();
   }
 
-  const images = Array.isArray(trip.images) && trip.images.length > 0 ? trip.images : [trip.image];
+  const rawImages = Array.isArray(trip.images) ? trip.images : [];
+  const images = rawImages.filter((image: unknown): image is string => typeof image === 'string' && image.length > 0);
+  if (images.length === 0 && trip.image) {
+    images.push(trip.image);
+  }
   const itinerary = normalizeItinerary(trip.itinerary);
   const faqs = Array.isArray(trip.faqs) ? trip.faqs : [];
 
