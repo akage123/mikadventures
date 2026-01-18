@@ -86,6 +86,8 @@ export async function updateTrip(id: number, trip: Partial<{
 }>) {
   try {
     const images = Array.isArray(trip.images) && trip.images.length > 0 ? trip.images : undefined;
+    const itinerary = trip.itinerary === undefined ? undefined : trip.itinerary ?? [];
+    const faqs = trip.faqs === undefined ? undefined : trip.faqs ?? [];
     return await prisma.trip.update({
       where: { id },
       data: {
@@ -101,8 +103,8 @@ export async function updateTrip(id: number, trip: Partial<{
         ...(trip.description !== undefined ? { description: trip.description } : {}),
         ...(trip.badge !== undefined ? { badge: trip.badge || null } : {}),
         ...(trip.active !== undefined ? { active: trip.active } : {}),
-        ...(trip.itinerary !== undefined ? { itinerary: trip.itinerary } : {}),
-        ...(trip.faqs !== undefined ? { faqs: trip.faqs } : {}),
+        ...(itinerary !== undefined ? { itinerary } : {}),
+        ...(faqs !== undefined ? { faqs } : {}),
       },
     });
   } catch (error) {
