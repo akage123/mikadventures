@@ -1,7 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useLanguage } from './LanguageProvider';
 
 export default function Header() {
+  const { language, setLanguage, t } = useLanguage();
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
       <div className="container mx-auto flex h-20 max-w-screen-xl items-center justify-between px-4">
@@ -9,7 +14,7 @@ export default function Header() {
           <Link href="/" className="flex items-center space-x-2">
             <Image
               src="/images/logo/logo.png"
-              alt="Mika Adventures Logo"
+              alt="Mik Adventures Logo"
               width={130}
               height={130}
             />
@@ -17,46 +22,32 @@ export default function Header() {
         </div>
 
         <nav className="hidden md:flex items-center space-x-10">
-          <Link href="#home" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
-            Home
+          <Link href="/" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
+            {t('header.home')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
-          <Link href="#trips" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
-            Adventures
+          <Link href="trips" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
+            {t('header.adventures')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
           <Link href="#about" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
-            About
+            {t('header.about')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
           <Link href="#contact" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
-            Contact
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
-          </Link>
-          <Link href="/admin" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
-            Admin
+            {t('header.contact')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
         </nav>
 
         <div className="flex items-center space-x-4">
-        <button
-  className="
-    hidden md:block
-    px-6 py-2.5 text-sm font-semibold
-    text-white
-    rounded-full
-    border border-white/30
-    shadow-[0_10px_25px_rgba(255,135,1,0.4)]
-    hover:shadow-[0_14px_35px_rgba(255,135,1,0.6)]
-    hover:scale-[1.03]
-    hover:brightness-110
-    transition-all duration-300 ease-out
-  "
-  style={{backgroundColor: '#ff8701'}}
->
-  Book Now
-</button>
+          <button
+            onClick={() => setLanguage(language === 'en' ? 'sq' : 'en')}
+            className="hidden md:inline-flex px-5 py-3 text-xs font-semibold text-gray-700 border border-orange-500 rounded-full hover:border-[#ff8701] hover:text-[#ff8701] transition-all"
+          >
+            {language === 'en' ? 'SQ' : 'EN'}
+          </button>
+        
 
           {/* Mobile menu button */}
           <button className="md:hidden p-2">

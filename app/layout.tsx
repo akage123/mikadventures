@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 import { TripProvider } from "../components/TripContext";
+import { LanguageProvider } from "../components/LanguageProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,8 +20,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Mika Adventures - Your Gateway to Amazing Journeys",
-  description: "Discover extraordinary travel experiences with Mika Adventures. Explore handpicked destinations, unforgettable adventures, and create memories that last a lifetime.",
+  title: "Mik Adventures - Your Gateway to Amazing Journeys",
+  description: "Discover extraordinary travel experiences with Mik Adventures. Explore handpicked destinations, unforgettable adventures, and create memories that last a lifetime.",
 };
 
 export default function RootLayout({
@@ -34,9 +35,11 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} antialiased`}
       >
-        <TripProvider>
-          {children}
-        </TripProvider>
+        <LanguageProvider>
+          <TripProvider>
+            {children}
+          </TripProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

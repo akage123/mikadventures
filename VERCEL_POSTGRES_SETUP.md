@@ -76,4 +76,4 @@ If you run into issues:
 2. Verify your environment variables are correct
 3. Make sure your Vercel Postgres database is active
 
-Your Mika Adventures admin panel is now production-ready! 🎉
+Your Mik Adventures admin panel is now production-ready! 🎉

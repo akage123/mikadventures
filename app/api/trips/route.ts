@@ -1,14 +1,15 @@
-import { NextResponse } from 'next/server';
-import { addTrip, createTripsTable, getTrips } from '../../../lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { addTrip, getTrips } from '../../../lib/db';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    if (!process.env.POSTGRES_URL && !process.env.POSTGRES_URL_NON_POOLING) {
-      return NextResponse.json({ error: 'POSTGRES_URL not set' }, { status: 503 });
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: 'DATABASE_URL not set' }, { status: 503 });
     }
-    await createTripsTable();
     const trips = await getTrips();
-    return NextResponse.json(trips);
+    const all = request.nextUrl.searchParams.get('all') === 'true';
+    const filtered = all ? trips : trips.filter((trip) => trip.active !== false);
+    return NextResponse.json(filtered);
   } catch (error) {
     console.error('Error loading trips:', error);
     return NextResponse.json({ error: 'Failed to load trips' }, { status: 500 });
@@ -17,24 +18,31 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.POSTGRES_URL && !process.env.POSTGRES_URL_NON_POOLING) {
-      return NextResponse.json({ error: 'POSTGRES_URL not set' }, { status: 503 });
+    if (!process.env.DATABASE_URL) {
+      return NextResponse.json({ error: 'DATABASE_URL not set' }, { status: 503 });
     }
-    await createTripsTable();
     const body = await request.json();
 
-    if (!body?.title || !body?.location || !body?.duration || !body?.price || !body?.image || !body?.description || body?.rating === undefined) {
+    const images = Array.isArray(body?.images) ? body.images : body?.image ? [body.image] : [];
+    if (!body?.location || !body?.dates || !body?.duration || !body?.price || images.length === 0 || !body?.description) {
       return NextResponse.json({ error: 'Missing required trip fields' }, { status: 400 });
     }
 
     const trip = await addTrip({
-      title: body.title,
       location: body.location,
+      dates: body.dates,
       duration: body.duration,
       price: body.price,
-      image: body.image,
+      originalPrice: body.originalPrice ?? null,
+      capacity: body.capacity ? Number(body.capacity) : null,
+      cutoffDate: body.cutoffDate ? new Date(body.cutoffDate) : null,
+      image: images[0],
+      images,
       description: body.description,
-      rating: body.rating,
+      badge: body.badge ?? null,
+      active: body.active !== undefined ? Boolean(body.active) : true,
+      itinerary: Array.isArray(body.itinerary) ? body.itinerary : [],
+      faqs: Array.isArray(body.faqs) ? body.faqs : [],
     });
 
     return NextResponse.json(trip);

@@ -1,3 +1,5 @@
+import RevealOnScroll from './RevealOnScroll';
+
 export default function About() {
   return (
     <section id="about" className="py-20 bg-white">
@@ -5,15 +7,19 @@ export default function About() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Content */}
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Why Choose Mika Adventures?
-            </h2>
-            <p className="text-lg text-gray-600 mb-8">
-              With over a decade of experience in crafting extraordinary travel experiences,
-              Mika Adventures has been your trusted partner in creating memories that last a lifetime.
-              We believe that travel is not just about visiting places—it's about connecting with cultures,
-              challenging yourself, and discovering the world through new perspectives.
-            </p>
+            <RevealOnScroll className="delay-100">
+              <h2 className="text-4xl font-bold text-gray-900 mb-6">
+                Why Choose Mik Adventures?
+              </h2>
+            </RevealOnScroll>
+            <RevealOnScroll className="delay-200">
+              <p className="text-lg text-gray-600 mb-8">
+                With over a decade of experience in crafting extraordinary travel experiences,
+                Mik Adventures has been your trusted partner in creating memories that last a lifetime.
+                We believe that travel is not just about visiting places—it's about connecting with cultures,
+                challenging yourself, and discovering the world through new perspectives.
+              </p>
+            </RevealOnScroll>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
               <div className="flex items-start space-x-3">
@@ -67,18 +73,20 @@ export default function About() {
           </div>
 
           {/* Image/Visual */}
-          <div className="relative">
-            <div className="bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl p-8 text-white">
-              <div className="text-center">
-                <div className="text-6xl font-bold mb-2">10+</div>
-                <div className="text-xl mb-6">Years of Experience</div>
-                <div className="text-4xl font-bold mb-2">500+</div>
-                <div className="text-xl mb-6">Happy Travelers</div>
-                <div className="text-4xl font-bold mb-2">25+</div>
-                <div className="text-xl">Destinations Explored</div>
+          <RevealOnScroll className="delay-300">
+            <div className="relative">
+              <div className="bg-gradient-to-r from-[#f2d8c4] to-[#ff8701] rounded-2xl p-8 text-white">
+                <div className="text-center">
+                  <div className="text-6xl font-bold mb-2">10+</div>
+                  <div className="text-xl mb-6">Years of Experience</div>
+                  <div className="text-4xl font-bold mb-2">500+</div>
+                  <div className="text-xl mb-6">Happy Travelers</div>
+                  <div className="text-4xl font-bold mb-2">25+</div>
+                  <div className="text-xl">Destinations Explored</div>
+                </div>
               </div>
             </div>
-          </div>
+          </RevealOnScroll>
         </div>
       </div>
     </section>
