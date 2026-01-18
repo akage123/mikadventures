@@ -37,7 +37,10 @@ export default async function AdventureDetailPage({ params }: { params: Promise<
     images.push(trip.image);
   }
   const itinerary = normalizeItinerary(trip.itinerary);
-  const faqs = Array.isArray(trip.faqs) ? trip.faqs : [];
+  const rawFaqs = Array.isArray(trip.faqs) ? trip.faqs : [];
+  const faqs = rawFaqs.filter((item: unknown): item is { question?: string; answer?: string } => (
+    typeof item === 'object' && item !== null
+  ));
 
   const bookingSum = await prisma.booking.aggregate({
     where: { tripId: trip.id },

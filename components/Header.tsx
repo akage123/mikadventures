@@ -34,10 +34,10 @@ export default function Header() {
             {t('header.about')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
-          <Link href="#contact" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
+          {/* <Link href="#contact" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
             {t('header.contact')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
-          </Link>
+          </Link> */}
         </nav>
 
         <div className="flex items-center space-x-4">
