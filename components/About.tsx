@@ -1,6 +1,10 @@
+'use client';
+
 import RevealOnScroll from './RevealOnScroll';
+import { useLanguage } from './LanguageProvider';
 
 export default function About() {
+  const { t } = useLanguage();
   return (
     <section id="about" className="py-20 bg-white">
       <div className="container mx-auto px-4 max-w-screen-xl">
@@ -9,15 +13,12 @@ export default function About() {
           <div>
             <RevealOnScroll className="delay-100">
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Why Choose Mik Adventures?
+                {t('about.title')}
               </h2>
             </RevealOnScroll>
             <RevealOnScroll className="delay-200">
               <p className="text-lg text-gray-600 mb-8">
-                With over a decade of experience in crafting extraordinary travel experiences,
-                Mik Adventures has been your trusted partner in creating memories that last a lifetime.
-                We believe that travel is not just about visiting places—it's about connecting with cultures,
-                challenging yourself, and discovering the world through new perspectives.
+                {t('about.body')}
               </p>
             </RevealOnScroll>
 
@@ -29,8 +30,8 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Expert Guides</h3>
-                  <p className="text-sm text-gray-600">Local experts who know every hidden gem</p>
+                  <h3 className="font-semibold text-gray-900">{t('about.expertGuides')}</h3>
+                  <p className="text-sm text-gray-600">{t('about.expertGuidesDesc')}</p>
                 </div>
               </div>
 
@@ -41,8 +42,8 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Safety First</h3>
-                  <p className="text-sm text-gray-600">Your safety is our top priority</p>
+                  <h3 className="font-semibold text-gray-900">{t('about.safety')}</h3>
+                  <p className="text-sm text-gray-600">{t('about.safetyDesc')}</p>
                 </div>
               </div>
 
@@ -53,8 +54,8 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Sustainable Travel</h3>
-                  <p className="text-sm text-gray-600">Responsible tourism that preserves cultures</p>
+                  <h3 className="font-semibold text-gray-900">{t('about.sustainable')}</h3>
+                  <p className="text-sm text-gray-600">{t('about.sustainableDesc')}</p>
                 </div>
               </div>
 
@@ -65,8 +66,8 @@ export default function About() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">24/7 Support</h3>
-                  <p className="text-sm text-gray-600">We're here for you throughout your journey</p>
+                  <h3 className="font-semibold text-gray-900">{t('about.support')}</h3>
+                  <p className="text-sm text-gray-600">{t('about.supportDesc')}</p>
                 </div>
               </div>
             </div>
@@ -78,11 +79,11 @@ export default function About() {
               <div className="bg-gradient-to-r from-[#f2d8c4] to-[#ff8701] rounded-2xl p-8 text-white">
                 <div className="text-center">
                   <div className="text-6xl font-bold mb-2">10+</div>
-                  <div className="text-xl mb-6">Years of Experience</div>
+                  <div className="text-xl mb-6">{t('about.years')}</div>
                   <div className="text-4xl font-bold mb-2">500+</div>
-                  <div className="text-xl mb-6">Happy Travelers</div>
+                  <div className="text-xl mb-6">{t('about.travelers')}</div>
                   <div className="text-4xl font-bold mb-2">25+</div>
-                  <div className="text-xl">Destinations Explored</div>
+                  <div className="text-xl">{t('about.destinations')}</div>
                 </div>
               </div>
             </div>

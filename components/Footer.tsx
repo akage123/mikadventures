@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useLanguage } from './LanguageProvider';
 
 export default function Footer() {
+  const { t } = useLanguage();
   return (
     <footer id="contact" className="bg-white border-t border-slate-200">
       <div className="container mx-auto px-4 max-w-screen-xl py-12">
@@ -8,7 +12,7 @@ export default function Footer() {
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-4">Mik Adventures</h3>
             <p className="text-gray-600 mb-6">
-              Creating extraordinary journeys with trusted guides, unforgettable moments, and seamless travel support.
+              {t('footer.blurb')}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -37,7 +41,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('footer.contact')}</h3>
             <div className="space-y-3 text-gray-600">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 mt-0.5 text-[#ff8701]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,18 +66,18 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Explore</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('footer.explore')}</h3>
             <ul className="space-y-2 text-gray-600">
-              <li><Link href="#home" className="hover:text-[#ff8701] transition-colors">Home</Link></li>
-              <li><Link href="#trips" className="hover:text-[#ff8701] transition-colors">Adventures</Link></li>
-              <li><Link href="#about" className="hover:text-[#ff8701] transition-colors">About</Link></li>
-              <li><Link href="/trips" className="hover:text-[#ff8701] transition-colors">All Trips</Link></li>
+              <li><Link href="#home" className="hover:text-[#ff8701] transition-colors">{t('footer.home')}</Link></li>
+              <li><Link href="#trips" className="hover:text-[#ff8701] transition-colors">{t('footer.adventures')}</Link></li>
+              <li><Link href="#about" className="hover:text-[#ff8701] transition-colors">{t('footer.about')}</Link></li>
+              <li><Link href="/trips" className="hover:text-[#ff8701] transition-colors">{t('footer.allTrips')}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-slate-200 mt-10 pt-6 text-center text-gray-500 text-sm">
-          <p>&copy; 2026  Mik Adventures. All rights reserved.</p>
+          <p>&copy; 2026 Mik Adventures. {t('footer.rights')}</p>
         </div>
       </div>
     </footer>

@@ -1,16 +1,20 @@
+'use client';
+
 import RevealOnScroll from './RevealOnScroll';
+import { useLanguage } from './LanguageProvider';
 
 export default function Memories() {
+  const { t } = useLanguage();
   return (
     <section id="memories" className="py-20 bg-white">
       <div className="container mx-auto px-4 max-w-screen-xl">
         <RevealOnScroll className="delay-100">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Wander more, worry less.
+              {t('memories.title')}
             </h2>
             <p className="text-lg text-gray-600">
-              Real moments from our recent adventures.
+              {t('memories.subtitle')}
             </p>
           </div>
         </RevealOnScroll>
@@ -23,7 +27,7 @@ export default function Memories() {
                   src={src}
                   controls
                   playsInline
-                  className="w-full h-72 md:h-100 lg:h-170 object-cover"
+                  className="w-full h-80 md:h-96 lg:h-[30rem] object-cover"
                 />
               </div>
             ))}
@@ -33,7 +37,7 @@ export default function Memories() {
         <RevealOnScroll className="delay-300">
           <div className="mt-12 flex flex-col items-center gap-4 text-center">
             <p className="text-gray-700 text-lg">
-              Follow our Instagram to see more of the memories we create together.
+              {t('memories.follow')}
             </p>
             <a
               href="https://www.instagram.com/mik_adventures/"

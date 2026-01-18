@@ -72,28 +72,36 @@ export default function Gallery() {
       <RevealOnScroll threshold={0.05}>
         <div className="marquee relative overflow-hidden">
           <div className="marquee-content flex w-max">
-            {loop.map((slide, index) => (
-              <div
-                key={`${slide.items[0].src}-${index}`}
-                className={`marquee-slide flex ${slide.reverse ? 'flex-col-reverse' : 'flex-col'} gap-4 sm:gap-5 mr-4 sm:mr-5 shrink-0`}
-              >
-                {slide.items.map((item) => (
-                  <div
-                    key={item.src}
-                    className={`overflow-hidden rounded-[10px] ${
-                      item.type === 'short' ? 'h-[200px]' : 'h-[300px]'
-                    } max-w-[180px] sm:max-w-[215px]`}
-                  >
-                    <img
-                      src={item.src}
-                      alt={item.alt}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
+            {(() => {
+              let imageCounter = 0;
+              return loop.map((slide, index) => (
+                <div
+                  key={`${slide.items[0].src}-${index}`}
+                  className={`marquee-slide flex ${slide.reverse ? 'flex-col-reverse' : 'flex-col'} gap-4 sm:gap-5 mr-4 sm:mr-5 shrink-0`}
+                >
+                  {slide.items.map((item) => {
+                    const eager = imageCounter < 4;
+                    imageCounter += 1;
+                    return (
+                      <div
+                        key={item.src}
+                        className={`overflow-hidden rounded-[10px] ${
+                          item.type === 'short' ? 'h-[200px]' : 'h-[300px]'
+                        } max-w-[180px] sm:max-w-[215px]`}
+                      >
+                        <img
+                          src={item.src}
+                          alt={item.alt}
+                          className="w-full h-full object-cover"
+                          loading={eager ? 'eager' : 'lazy'}
+                          fetchPriority={eager ? 'high' : 'auto'}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </RevealOnScroll>
