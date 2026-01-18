@@ -10,6 +10,7 @@ import { getTrips } from '../lib/db';
 type InitialTrip = {
   id: number;
   location: string;
+  dates: string;
   duration: string;
   price: string;
   originalPrice?: string | null;
@@ -26,6 +27,7 @@ export default async function Home() {
     .map((trip) => ({
       id: trip.id,
       location: trip.location,
+      dates: trip.dates,
       duration: trip.duration,
       price: trip.price,
       originalPrice: trip.originalPrice ?? null,
