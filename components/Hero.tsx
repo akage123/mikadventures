@@ -11,14 +11,6 @@ export default function Hero() {
   return (
     <section id="home" className="relative min-h-[60vh] flex items-center justify-center bg-white overflow-hidden">
       {/* Background Pattern */}
-      <Image
-                src="/images/random/jesus.png"
-                alt="Jesus"
-                width={320}
-                height={220}
-                className="absolute right-10 bottom-10 opacity-20  "
-                priority
-              />
                             <Image
                 src="/images/random/mountfuji.png"
                 alt="Mount Fuji"

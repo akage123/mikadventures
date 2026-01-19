@@ -1,6 +1,32 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+
 export default function Gallery() {
+  const marqueeRef = useRef<HTMLDivElement | null>(null);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const element = marqueeRef.current;
+    if (!element) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(() => setIsActive(true));
+          } else {
+            setTimeout(() => setIsActive(true), 150);
+          }
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const slides = [
     {
       reverse: false,
@@ -67,8 +93,8 @@ export default function Gallery() {
     <section className="w-full py-16 overflow-hidden bg-gradient-to-r from-white to-slate-100">
 
 
-        <div className="marquee relative overflow-hidden">
-          <div className="marquee-content flex w-max">
+        <div ref={marqueeRef} className="marquee relative overflow-hidden">
+          <div className={`marquee-content flex w-max ${isActive ? 'is-active' : ''}`}>
             {(() => {
               let imageCounter = 0;
               return loop.map((slide, index) => (
@@ -77,7 +103,6 @@ export default function Gallery() {
                   className={`marquee-slide flex ${slide.reverse ? 'flex-col-reverse' : 'flex-col'} gap-4 sm:gap-5 mr-4 sm:mr-5 shrink-0`}
                 >
                   {slide.items.map((item) => {
-                    const eager = imageCounter < 4;
                     imageCounter += 1;
                     return (
                       <div
@@ -90,8 +115,9 @@ export default function Gallery() {
                           src={item.src}
                           alt={item.alt}
                           className="w-full h-full object-cover"
-                          loading={eager ? 'eager' : 'lazy'}
-                          fetchPriority={eager ? 'high' : 'auto'}
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="auto"
                         />
                       </div>
                     );
@@ -105,11 +131,23 @@ export default function Gallery() {
       <style>{`
         .marquee-content {
           animation: marquee 30s linear infinite;
+          animation-play-state: paused;
           will-change: transform;
+        }
+
+        .marquee-content.is-active {
+          animation-play-state: running;
         }
 
         .marquee:hover .marquee-content {
           animation-play-state: paused;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .marquee-content,
+          .marquee-content.is-active {
+            animation: none;
+          }
         }
 
         @keyframes marquee {
