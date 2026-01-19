@@ -24,21 +24,21 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const images = Array.isArray(body?.images) ? body.images : body?.image ? [body.image] : [];
-    if (!body?.location || !body?.dates || !body?.duration || !body?.price || images.length === 0 || !body?.description) {
+    if (!body?.location || !body?.dates || images.length === 0) {
       return NextResponse.json({ error: 'Missing required trip fields' }, { status: 400 });
     }
 
     const trip = await addTrip({
       location: body.location,
       dates: body.dates,
-      duration: body.duration,
-      price: body.price,
+      duration: body.duration ?? '',
+      price: body.price ?? '',
       originalPrice: body.originalPrice ?? null,
       capacity: body.capacity ? Number(body.capacity) : null,
       cutoffDate: body.cutoffDate ? new Date(body.cutoffDate) : null,
       image: images[0],
       images,
-      description: body.description,
+      description: body.description ?? '',
       badge: body.badge ?? null,
       active: body.active !== undefined ? Boolean(body.active) : true,
       itinerary: Array.isArray(body.itinerary) ? body.itinerary : [],

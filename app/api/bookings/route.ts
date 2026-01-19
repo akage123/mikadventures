@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 
+const BOOKING_NOTIFY_EMAIL = process.env.BOOKING_NOTIFY_EMAIL ?? 'vu02vu@gmail.com';
+
 export async function GET() {
   try {
     const bookings = await prisma.booking.findMany({
@@ -57,6 +59,43 @@ export async function POST(request: Request) {
       },
       include: { trip: true },
     });
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      const emailText = [
+        `New booking from ${booking.fullName}`,
+        '',
+        `Trip: ${booking.trip.location} (${booking.trip.dates})`,
+        `People: ${booking.people}`,
+        `Status: ${booking.status}`,
+        '',
+        `Email: ${booking.email}`,
+        `Phone: ${booking.phone}`,
+        `Country: ${booking.country}`,
+        `Instagram: ${booking.instagram || 'N/A'}`,
+        '',
+        `Booking ID: ${booking.id}`,
+        `Created: ${booking.createdAt.toISOString()}`,
+      ].join('\n');
+
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Mik Adventures <onboarding@resend.dev>',
+            to: [BOOKING_NOTIFY_EMAIL],
+            subject: `New booking from ${booking.fullName}`,
+            text: emailText,
+          }),
+        });
+      } catch (emailError) {
+        console.error('Failed to send booking email:', emailError);
+      }
+    }
 
     return NextResponse.json(booking);
   } catch (error) {
