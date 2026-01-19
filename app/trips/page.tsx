@@ -110,6 +110,7 @@ export default function TripsPage() {
                     key={trip.id}
                     id={trip.id}
                     location={trip.location}
+                    dates={trip.dates}
                     duration={trip.duration}
                     price={trip.price}
                     originalPrice={trip.originalPrice}

@@ -1,7 +1,5 @@
 'use client';
 
-import RevealOnScroll from './RevealOnScroll';
-
 export default function Gallery() {
   const slides = [
     {
@@ -69,7 +67,6 @@ export default function Gallery() {
     <section className="w-full py-16 overflow-hidden bg-gradient-to-r from-white to-slate-100">
 
 
-      <RevealOnScroll threshold={0.05}>
         <div className="marquee relative overflow-hidden">
           <div className="marquee-content flex w-max">
             {(() => {
@@ -104,7 +101,6 @@ export default function Gallery() {
             })()}
           </div>
         </div>
-      </RevealOnScroll>
 
       <style>{`
         .marquee-content {

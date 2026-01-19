@@ -1,22 +1,21 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import BookingPdfButton from './admin/BookingPdfButton';
+import { DocumentPdf32Filled } from './icons/DocumentPdf32Filled';
+import { FileExcelFilled } from './icons/FileExcelFilled';
 import { useTrips, Trip } from './TripContext';
+import { generateBookingsPdf, type BookingPdfData } from '@/lib/pdf/bookingPdf';
 
-type Booking = {
+type Booking = BookingPdfData;
+type Contact = {
   id: number;
   fullName: string;
-  phone: string;
   email: string;
-  country: string;
-  instagram?: string | null;
-  people: number;
-  status: string;
-  trip: {
-    id: number;
-    location: string;
-    dates: string;
-  };
+  phone?: string | null;
+  message: string;
+  createdAt: string;
 };
 
 export default function Admin() {
@@ -43,6 +42,21 @@ export default function Admin() {
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingStatus, setBookingStatus] = useState('all');
+  const [isExportingPdfs, setIsExportingPdfs] = useState(false);
+  const [isSavingTrip, setIsSavingTrip] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const [contactsPage, setContactsPage] = useState(1);
+  const [tripsPage, setTripsPage] = useState(1);
+  const [confirmDeleteTripId, setConfirmDeleteTripId] = useState<number | null>(null);
+  const [isDeletingTrip, setIsDeletingTrip] = useState(false);
+  const bookingsPerPage = 6;
+  const contactsPerPage = 6;
+  const tripsPerPage = 12;
+  const filteredBookings = bookings.filter((booking) => bookingStatus === 'all' || booking.status === bookingStatus);
+  const pagedBookings = filteredBookings.slice((bookingsPage - 1) * bookingsPerPage, bookingsPage * bookingsPerPage);
+  const pagedContacts = contacts.slice((contactsPage - 1) * contactsPerPage, contactsPage * contactsPerPage);
+  const pagedTrips = trips.slice((tripsPage - 1) * tripsPerPage, tripsPage * tripsPerPage);
 
   useEffect(() => {
     const loadBookings = async () => {
@@ -62,6 +76,48 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
+    const loadContacts = async () => {
+      try {
+        const response = await fetch('/api/contacts');
+        if (!response.ok) {
+          throw new Error('Failed to load contacts');
+        }
+        const data = await response.json();
+        setContacts(data);
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+      }
+    };
+
+    loadContacts();
+  }, []);
+
+  useEffect(() => {
+    setBookingsPage(1);
+  }, [bookingStatus]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(contacts.length / contactsPerPage));
+    if (contactsPage > totalPages) {
+      setContactsPage(totalPages);
+    }
+  }, [contacts.length, contactsPage, contactsPerPage]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(trips.length / tripsPerPage));
+    if (tripsPage > totalPages) {
+      setTripsPage(totalPages);
+    }
+  }, [trips.length, tripsPage, tripsPerPage]);
+
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(filteredBookings.length / bookingsPerPage));
+    if (bookingsPage > totalPages) {
+      setBookingsPage(totalPages);
+    }
+  }, [filteredBookings.length, bookingsPage, bookingsPerPage]);
+
+  useEffect(() => {
     if (!editingTrip || !descriptionRef.current) {
       return;
     }
@@ -72,6 +128,10 @@ export default function Admin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingTrip) {
+      return;
+    }
+    setIsSavingTrip(true);
 
     try {
       const payload = {
@@ -131,6 +191,24 @@ export default function Admin() {
       setToast({ type: 'error', message: 'Failed to save adventure' });
       setTimeout(() => setToast(null), 3000);
       alert('Error saving trip. Please try again.');
+    } finally {
+      setIsSavingTrip(false);
+    }
+  };
+
+  const handleConfirmDeleteTrip = async () => {
+    if (!confirmDeleteTripId || isDeletingTrip) {
+      return;
+    }
+    setIsDeletingTrip(true);
+    try {
+      await deleteTrip(confirmDeleteTripId);
+      setConfirmDeleteTripId(null);
+    } catch (error) {
+      console.error('Error deleting trip:', error);
+      alert('Error deleting trip. Please try again.');
+    } finally {
+      setIsDeletingTrip(false);
     }
   };
 
@@ -337,8 +415,107 @@ export default function Admin() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportBookingPdfs = async () => {
+    const filtered = bookings.filter((booking) => bookingStatus === 'all' || booking.status === bookingStatus);
+    if (filtered.length === 0) {
+      setToast({ type: 'error', message: 'No bookings to export' });
+      setTimeout(() => setToast(null), 2000);
+      return;
+    }
+    setIsExportingPdfs(true);
+    try {
+      await generateBookingsPdf(filtered);
+      setToast({ type: 'success', message: `Exported ${filtered.length} bookings` });
+      setTimeout(() => setToast(null), 2000);
+    } catch (error) {
+      console.error('Error exporting booking PDFs:', error);
+      setToast({ type: 'error', message: 'Failed to export PDFs' });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setIsExportingPdfs(false);
+    }
+  };
+
+  const statusTone = (status: string) => {
+    const tones: Record<string, { select: string }> = {
+      confirmed: { select: 'border-emerald-300 bg-emerald-50 text-emerald-700 focus:border-emerald-400 focus:ring-emerald-300/40' },
+      new: { select: 'border-blue-300 bg-blue-50 text-blue-700 focus:border-blue-400 focus:ring-blue-300/40' },
+      contacted: { select: 'border-orange-300 bg-orange-50 text-orange-700 focus:border-orange-400 focus:ring-orange-300/40' },
+      closed: { select: 'border-red-300 bg-red-50 text-red-700 focus:border-red-400 focus:ring-red-300/40' },
+      all: { select: 'border-gray-200 bg-white text-gray-700 focus:border-[#ff8701] focus:ring-[#ff8701]' },
+    };
+    return tones[status] ?? tones.all;
+  };
+
+  const renderPagination = (
+    totalItems: number,
+    perPage: number,
+    currentPage: number,
+    onPageChange: (page: number) => void,
+  ) => {
+    const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+    if (totalPages <= 1) {
+      return null;
+    }
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+        {Array.from({ length: totalPages }, (_, index) => {
+          const page = index + 1;
+          const isActive = page === currentPage;
+          return (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              className={`rounded-lg border px-3 py-1 text-sm font-semibold transition-colors ${
+                isActive
+                  ? 'border-[#ff8701] bg-[#ff8701] text-white'
+                  : 'border-gray-200 text-gray-700 hover:border-[#ff8701] hover:text-[#ff8701]'
+              }`}
+            >
+             {page}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
+      {confirmDeleteTripId !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 px-6 py-4">
+              <h2 className="text-lg font-bold text-gray-900">Delete adventure?</h2>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete this adventure? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteTripId(null)}
+                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-300 hover:text-gray-900 transition-colors"
+                disabled={isDeletingTrip}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteTrip}
+                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-colors hover:bg-red-600 disabled:opacity-60"
+                disabled={isDeletingTrip}
+              >
+                {isDeletingTrip ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {toast && (
         <div className="fixed top-6 right-6 z-50">
           <div className={`rounded-xl px-4 py-3 text-sm font-semibold shadow-lg ${toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
@@ -358,43 +535,54 @@ export default function Admin() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Trip Management Admin</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">Adventure Management Admin</h1>
                   <p className="text-black">Manage your travel adventures and destinations</p>
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                setIsAddingTrip(true);
-                setEditingTrip(null);
-                setFormData({
-                  location: '',
-                  dates: '',
-                  duration: '',
-                  price: '',
-                  originalPrice: '',
-                  capacity: '',
-                  cutoffDate: '',
-                  images: [],
-                  description: '',
-                  badge: '',
-                  active: true,
-                  itinerary: [{ city: '', nights: '' }],
-                  faqs: [{ question: '', answer: '' }]
-                });
-                setImagePreview('');
-              }}
-              className="bg-gradient-to-r from-[#ff8701] to-orange-500 text-white px-8 py-4 rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center gap-3"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Trip
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Link
+                href="/"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 hover:border-[#ff8701] hover:text-[#ff8701] transition-colors sm:w-auto"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h5m4 0h5a1 1 0 001-1V10" />
+                </svg>
+                View site
+              </Link>
+              <button
+                onClick={() => {
+                  setIsAddingTrip(true);
+                  setEditingTrip(null);
+                  setFormData({
+                    location: '',
+                    dates: '',
+                    duration: '',
+                    price: '',
+                    originalPrice: '',
+                    capacity: '',
+                    cutoffDate: '',
+                    images: [],
+                    description: '',
+                    badge: '',
+                    active: true,
+                    itinerary: [{ city: '', nights: '' }],
+                    faqs: [{ question: '', answer: '' }]
+                  });
+                  setImagePreview('');
+                }}
+                className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#ff8701] to-orange-500 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:from-orange-500 hover:to-orange-600 hover:shadow-xl sm:w-auto"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Adventure
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-2 gap-4 mt-8">
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -415,6 +603,28 @@ export default function Admin() {
                 <svg className="w-8 h-8 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-black text-sm font-medium">Total Bookings</p>
+                  <p className="text-3xl font-bold text-black">{bookings.length}</p>
+                </div>
+                <svg className="w-8 h-8 text-orange-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-black text-sm font-medium">Total Contacts</p>
+                  <p className="text-3xl font-bold text-black">{contacts.length}</p>
+                </div>
+                <svg className="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5V9l-7-7H5a2 2 0 00-2 2v16h5m6-10H8m8 4H8m6 4H8" />
                 </svg>
               </div>
             </div>
@@ -453,7 +663,7 @@ export default function Admin() {
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black focus:ring-2 focus:ring-[#ff8701] focus:border-[#ff8701] transition-all duration-200 bg-gray-50 focus:bg-white"
-                    placeholder="e.g., Santorini, Greece"
+                    placeholder="e.g., Japan"
                     required
                   />
                 </div>
@@ -486,7 +696,6 @@ export default function Admin() {
                     onChange={(e) => setFormData({...formData, duration: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black focus:ring-2 focus:ring-[#ff8701] focus:border-[#ff8701] transition-all duration-200 bg-gray-50 focus:bg-white"
                     placeholder="e.g., 7 Days"
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -501,8 +710,7 @@ export default function Admin() {
                     value={formData.price}
                     onChange={(e) => setFormData({...formData, price: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black focus:ring-2 focus:ring-[#ff8701] focus:border-[#ff8701] transition-all duration-200 bg-gray-50 focus:bg-white"
-                    placeholder="e.g., $2,499"
-                    required
+                    placeholder="e.g., 2,499"
                   />
                 </div>
                 <div className="space-y-2">
@@ -517,7 +725,7 @@ export default function Admin() {
                     value={formData.originalPrice}
                     onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black focus:ring-2 focus:ring-[#ff8701] focus:border-[#ff8701] transition-all duration-200 bg-gray-50 focus:bg-white"
-                    placeholder="e.g., $2,999"
+                    placeholder="e.g., 2,999"
                   />
                 </div>
                 <div className="space-y-2">
@@ -543,6 +751,9 @@ export default function Admin() {
                     </svg>
                     Booking cutoff date (optional)
                   </label>
+                  <p className="text-xs text-gray-500">
+                    After this date, bookings are disabled for the trip.
+                  </p>
                   <input
                     type="date"
                     value={formData.cutoffDate}
@@ -557,6 +768,9 @@ export default function Admin() {
                     </svg>
                     Image Upload
                   </label>
+                   <p className="text-xs text-gray-500">
+                    Here you can add multiple images, also you can pick which one to show as the main image.
+                  </p>  
                   <input
                     type="file"
                     accept="image/*"
@@ -620,7 +834,6 @@ export default function Admin() {
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     className={`w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black focus:ring-2 focus:ring-[#ff8701] focus:border-[#ff8701] transition-all duration-200 bg-gray-50 focus:bg-white resize-none ${editingTrip ? '' : 'h-32'}`}
                     placeholder="Describe the amazing adventure..."
-                    required
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
@@ -689,16 +902,19 @@ export default function Admin() {
                       <svg className="w-4 h-4 text-[#ff8701]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m4 0H3m18 0v9a2 2 0 01-2 2H5a2 2 0 01-2-2v-9" />
                       </svg>
-                      City Breakdown
+                      Landmarks & Stops
                     </label>
                     <button
                       type="button"
                       onClick={handleAddItineraryRow}
                       className="text-sm font-semibold text-[#ff8701] hover:text-orange-600 transition-colors"
                     >
-                      + Add City
+                      + Add Stop
                     </button>
                   </div>
+                  <p className="text-xs text-gray-500">
+                    Optional list of key spots, cities, or landmarks visited during the trip.
+                  </p>
                   <div className="space-y-3">
                     {formData.itinerary.map((item, index) => (
                       <div key={index} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-3 items-center">
@@ -707,8 +923,7 @@ export default function Admin() {
                           value={item.city}
                           onChange={(e) => handleItineraryChange(index, 'city', e.target.value)}
                           className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-black focus:ring-2 focus:ring-[#ff8701] focus:border-[#ff8701] transition-all duration-200 bg-gray-50 focus:bg-white"
-                          placeholder="City (e.g., Osaka)"
-                          required
+                          placeholder="Stop (e.g., Osaka Castle)"
                         />
                         <input
                           type="text"
@@ -732,12 +947,13 @@ export default function Admin() {
                 <div className="md:col-span-2 flex flex-col sm:flex-row gap-4 pt-6">
                   <button
                     type="submit"
-                    className="w-full sm:w-auto bg-gradient-to-r from-[#ff8701] to-orange-500 text-white px-8 py-4 rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3"
+                    disabled={isSavingTrip}
+                    className="w-full sm:w-auto bg-gradient-to-r from-[#ff8701] to-orange-500 text-white px-8 py-4 rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center gap-3 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    {editingTrip ? 'Update Adventure' : 'Create Adventure'}
+                    {isSavingTrip ? 'Saving...' : editingTrip ? 'Update Adventure' : 'Create Adventure'}
                   </button>
                   <button
                     type="button"
@@ -761,70 +977,138 @@ export default function Admin() {
                 <h2 className="text-2xl font-bold text-gray-900">Bookings</h2>
                 <p className="text-sm text-gray-600">Track booking status and client details.</p>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-semibold text-gray-900">Status</label>
-                <select
-                  value={bookingStatus}
-                  onChange={(event) => setBookingStatus(event.target.value)}
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-black focus:border-[#ff8701] focus:ring-2 focus:ring-[#ff8701]"
-                >
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <label className="text-sm font-semibold text-gray-900">Status</label>
+              <select
+                value={bookingStatus}
+                onChange={(event) => setBookingStatus(event.target.value)}
+                className={`rounded-xl border px-4 py-2 text-black focus:ring-2 ${statusTone(bookingStatus).select}`}
+              >
                   <option value="all">All</option>
                   <option value="new">New</option>
                   <option value="contacted">Contacted</option>
                   <option value="confirmed">Confirmed</option>
                   <option value="closed">Closed</option>
                 </select>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <button
                   type="button"
                   onClick={handleExportBookings}
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-[#ff8701] hover:text-[#ff8701] transition-colors"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#ff8701] hover:text-[#ff8701] sm:w-auto"
                 >
+                  <FileExcelFilled className="h-4 w-4 text-[#ff8701]" aria-hidden="true" />
                   Export CSV
                 </button>
+                <button
+                  type="button"
+                  onClick={handleExportBookingPdfs}
+                  disabled={isExportingPdfs}
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-colors sm:w-auto ${isExportingPdfs ? 'border-gray-200 text-gray-400' : 'border-gray-200 text-gray-700 hover:border-[#ff8701] hover:text-[#ff8701]'}`}
+                >
+                  <DocumentPdf32Filled className="h-4 w-4 text-[#ff8701]" aria-hidden="true" />
+                  {isExportingPdfs ? 'Preparing PDFs...' : 'Export PDFs'}
+                </button>
               </div>
+            </div>
             </div>
 
             {bookings.length === 0 ? (
               <p className="text-gray-600">No bookings yet.</p>
             ) : (
-              <div className="space-y-4">
-                {bookings
-                  .filter((booking) => bookingStatus === 'all' || booking.status === bookingStatus)
-                  .map((booking) => (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pagedBookings.map((booking) => (
                     <div key={booking.id} className="rounded-xl border border-gray-200 p-4">
-                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      <div className="flex flex-col gap-4">
                         <div>
                           <div className="text-lg font-semibold text-gray-900">{booking.fullName}</div>
-                          <div className="text-sm text-gray-600">
-                            {booking.trip.location} · {booking.trip.dates} · {booking.people} people
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {booking.phone} · {booking.email}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {booking.country}
-                          </div>
-                          {booking.instagram && (
-                            <div className="text-sm text-gray-600">Instagram: {booking.instagram}</div>
-                          )}
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold text-gray-900">Location:</span> {booking.trip.location}
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold text-gray-900">Dates:</span> {booking.trip.dates}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold text-gray-900">Capacity:</span> {booking.people} {booking.people === 1 ? 'person' : 'people'}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold text-gray-900">Number:</span> {booking.phone}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold text-gray-900">Email:</span> {booking.email}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-semibold text-gray-900">Country:</span> {booking.country}
+                        </div>
+                        {booking.instagram && (
+                          <div className="text-sm text-gray-600">
+                            <span className="font-semibold text-gray-900">Instagram:</span> {booking.instagram}
+                          </div>
+                        )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
                           <label className="text-sm font-semibold text-gray-900">Status</label>
                           <select
                             value={booking.status}
                             onChange={(event) => handleBookingStatusChange(booking.id, event.target.value)}
-                            className="rounded-xl border border-gray-200 px-4 py-2 text-black focus:border-[#ff8701] focus:ring-2 focus:ring-[#ff8701]"
+                            className={`rounded-xl border px-4 py-2 text-black focus:ring-2 ${statusTone(booking.status).select}`}
                           >
                             <option value="new">New</option>
                             <option value="contacted">Contacted</option>
                             <option value="confirmed">Confirmed</option>
                             <option value="closed">Closed</option>
                           </select>
+                          <BookingPdfButton booking={booking} />
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+                {renderPagination(filteredBookings.length, bookingsPerPage, bookingsPage, setBookingsPage)}
+              </>
+            )}
+          </div>
+
+          {/* Contacts */}
+          <div className="mt-12 bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Contacts</h2>
+                <p className="text-sm text-gray-600">Messages submitted from the contact form.</p>
               </div>
+            </div>
+
+            {contacts.length === 0 ? (
+              <p className="text-gray-600">No contact messages yet.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pagedContacts.map((contact) => (
+                    <div key={contact.id} className="rounded-xl border border-gray-200 p-4">
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <div className="text-lg font-semibold text-gray-900">{contact.fullName}</div>
+                          <div className="text-sm text-gray-600">{contact.email}</div>
+                          {contact.phone && (
+                            <div className="text-sm text-gray-600">{contact.phone}</div>
+                          )}
+                          <div className="mt-3 text-sm text-gray-700 whitespace-pre-line">{contact.message}</div>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {new Date(contact.createdAt).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {renderPagination(contacts.length, contactsPerPage, contactsPage, setContactsPage)}
+              </>
             )}
           </div>
 
@@ -832,9 +1116,9 @@ export default function Admin() {
           {!loading && (
             <div className="mt-10">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Trips</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {trips.map((trip) => (
-                <div key={trip.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-slate-200 overflow-hidden transform hover:-translate-y-2">
+              <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {pagedTrips.map((trip) => (
+                <div key={trip.id} className="group flex flex-col bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-slate-200 overflow-hidden transform hover:-translate-y-2">
                   {/* Image Section */}
                   <div className="relative h-64 overflow-hidden">
                     <img
@@ -845,7 +1129,7 @@ export default function Admin() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-10"></div>
                     <div className="absolute bottom-6 left-6 right-6 z-20 text-white">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2">
                         <svg className="w-5 h-5 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -856,8 +1140,8 @@ export default function Admin() {
                   </div>
 
                   {/* Content Section */}
-                  <div className="p-6 bg-gradient-to-b from-white to-slate-50 flex flex-col min-h-[280px]">
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-6 bg-gradient-to-b from-white to-slate-50 flex flex-col flex-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                       <div className="bg-slate-100 rounded-xl p-3 text-center">
                         <div className="text-xs text-black uppercase tracking-wide font-semibold mb-1">Duration</div>
                         <div className="text-lg font-bold text-black">{trip.dates}</div>
@@ -874,9 +1158,9 @@ export default function Admin() {
                       </p>
                     </div>
 
-                    <div className="flex gap-3 mt-auto mb-4">
-                      <div className="flex items-center justify-between w-full bg-white rounded-xl border border-gray-200 px-4 py-3">
-                        <div className="text-sm font-semibold text-gray-900">
+                    <div className="mt-auto space-y-3">
+                      <div className="flex w-full flex-col items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+                        <div className="text-sm font-semibold text-gray-900 text-center sm:text-left">
                           {trip.active ? 'Active' : 'Inactive'}
                         </div>
                         <button
@@ -896,43 +1180,35 @@ export default function Admin() {
                           />
                         </button>
                       </div>
-                    </div>
-                    <div className="flex gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          onClick={() => {
+                            handleEdit(trip);
+                            document.getElementById('admin-trip-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                          className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-600 hover:to-blue-700 hover:shadow-lg sm:w-auto"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit
+                        </button>
                       <button
-                        onClick={() => {
-                          handleEdit(trip);
-                          document.getElementById('admin-trip-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                        onClick={() => setConfirmDeleteTripId(trip.id)}
+                        className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:from-red-600 hover:to-red-700 hover:shadow-lg sm:w-auto"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (confirm('Are you sure you want to delete this adventure? This action cannot be undone.')) {
-                            try {
-                              await deleteTrip(trip.id);
-                            } catch (error) {
-                              console.error('Error deleting trip:', error);
-                              alert('Error deleting trip. Please try again.');
-                            }
-                          }
-                        }}
-                        className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                      </button>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
               </div>
+              {renderPagination(trips.length, tripsPerPage, tripsPage, setTripsPage)}
             </div>
           )}
 

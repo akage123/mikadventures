@@ -4,9 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useLanguage } from './LanguageProvider';
+import { useContactModal } from './ContactModalProvider';
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
+  const { openContactModal } = useContactModal();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -28,18 +30,22 @@ export default function Header() {
             {t('header.home')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
-          <Link href="trips" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
+          <Link href="/trips" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
             {t('header.adventures')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
-          <Link href="#about" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
+          <Link href="/about" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
             {t('header.about')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
           </Link>
-          {/* <Link href="#contact" className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat">
+          <button
+            type="button"
+            onClick={openContactModal}
+            className="text-gray-800 hover:text-[#ff8701] transition-all duration-300 font-semibold text-lg relative group font-montserrat"
+          >
             {t('header.contact')}
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ff8701] transition-all duration-300 group-hover:w-full"></span>
-          </Link> */}
+          </button>
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -88,7 +94,7 @@ export default function Header() {
               {t('header.adventures')}
             </Link>
             <Link
-              href="#about"
+              href="/about"
               onClick={() => setMobileOpen(false)}
               className="text-gray-800 font-semibold text-base"
             >
@@ -97,10 +103,20 @@ export default function Header() {
             <button
               type="button"
               onClick={() => {
+                openContactModal();
+                setMobileOpen(false);
+              }}
+              className="text-left text-gray-800 font-semibold text-base"
+            >
+              {t('header.contact')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 setLanguage(language === 'en' ? 'sq' : 'en');
                 setMobileOpen(false);
               }}
-              className="self-start px-4 py-2 text-xs font-semibold text-gray-700 border border-orange-500 rounded-full hover:border-[#ff8701] hover:text-[#ff8701] transition-all"
+              className="self-start px-6 py-2 text-xs font-semibold text-gray-700 border border-orange-500 rounded-full hover:border-[#ff8701] hover:text-[#ff8701] transition-all"
             >
               {language === 'en' ? 'SQ' : 'EN'}
             </button>

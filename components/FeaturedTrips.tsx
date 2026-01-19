@@ -35,6 +35,7 @@ export default function FeaturedTrips({ initialTrips = [] }: FeaturedTripsProps)
               <TripCard
                 id={trip.id}
                 location={trip.location}
+                dates={trip.dates}
                 duration={trip.duration}
                 price={trip.price}
                 originalPrice={trip.originalPrice}

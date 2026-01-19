@@ -40,7 +40,7 @@ export default function AdventureDetailsPanel({
     <>
       <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
         <div className="mb-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-4xl font-bold text-black">{trip.location}</h1>
               <p className="text-lg text-gray-600 mt-2">{trip.dates}</p>

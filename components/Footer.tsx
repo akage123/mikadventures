@@ -1,19 +1,36 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useLanguage } from './LanguageProvider';
+import { useContactModal } from './ContactModalProvider';
 
 export default function Footer() {
   const { t } = useLanguage();
+  const { openContactModal } = useContactModal();
   return (
     <footer id="contact" className="bg-white border-t border-slate-200">
       <div className="container mx-auto px-4 max-w-screen-xl py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Mik Adventures</h3>
+            <div className="mb-4">
+              <Image
+                src="/images/logo/logo.png"
+                alt="Mik Adventures Logo"
+                width={200}
+                height={120}
+              />
+            </div>
             <p className="text-gray-600 mb-6">
               {t('footer.blurb')}
             </p>
+            <button
+              type="button"
+              onClick={openContactModal}
+              className="mb-6 inline-flex items-center justify-center rounded-xl border border-[#ff8701] px-4 py-2 text-sm font-semibold text-[#ff8701] hover:bg-[#ff8701] hover:text-white transition-colors"
+            >
+              {t('footer.contactCta')}
+            </button>
             <div className="flex items-center gap-3">
               <a
                 href="https://www.instagram.com/mik_adventures/"
@@ -35,6 +52,16 @@ export default function Footer() {
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.tiktok.com/@mik_adventures"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-gray-200 text-gray-700 hover:text-[#ff8701] hover:border-[#ff8701] transition-colors"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M21.7 8.05a5.42 5.42 0 0 1-3.14-1.02 5.46 5.46 0 0 1-1.99-3.12h-3.1v11.02a2.62 2.62 0 1 1-2.62-2.62c.26 0 .52.04.77.11V9.2a5.83 5.83 0 0 0-1.05-.1 5.73 5.73 0 1 0 5.73 5.73V9.1a8.6 8.6 0 0 0 4.4 1.22V8.05z" />
                 </svg>
               </a>
             </div>
@@ -68,16 +95,16 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('footer.explore')}</h3>
             <ul className="space-y-2 text-gray-600">
-              <li><Link href="#home" className="hover:text-[#ff8701] transition-colors">{t('footer.home')}</Link></li>
-              <li><Link href="#trips" className="hover:text-[#ff8701] transition-colors">{t('footer.adventures')}</Link></li>
-              <li><Link href="#about" className="hover:text-[#ff8701] transition-colors">{t('footer.about')}</Link></li>
+              <li><Link href="/" className="hover:text-[#ff8701] transition-colors">{t('footer.home')}</Link></li>
+              <li><Link href="/trips" className="hover:text-[#ff8701] transition-colors">{t('footer.adventures')}</Link></li>
+              <li><Link href="/about" className="hover:text-[#ff8701] transition-colors">{t('footer.about')}</Link></li>
               <li><Link href="/trips" className="hover:text-[#ff8701] transition-colors">{t('footer.allTrips')}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-slate-200 mt-10 pt-6 text-center text-gray-500 text-sm">
-          <p>&copy; 2026 Mik Adventures. {t('footer.rights')}</p>
+          <p>&copy; {new Date().getFullYear()} Mik Adventures. {t('footer.rights')}</p>
         </div>
       </div>
     </footer>
